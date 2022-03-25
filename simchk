@@ -1,0 +1,72 @@
+#!/usr/bin/python
+import os, sys
+import hashlib
+
+data = dict()
+
+""" 
+Similarities checker
+This program searches through subdirectories and checks for any replicas of all the files.
+"""
+
+if len(sys.argv) == 1:
+    print("No directory name provided...\n Usage: shacheck Path/To/Directory")
+    sys.exit()
+
+relative_directory = sys.argv[1]
+
+def hash_file(filename):
+   """"This function returns the SHA-1 hash
+   of the file passed into it"""
+
+   # make a hash object
+   h = hashlib.sha1()
+
+   # open file for reading in binary mode
+   with open(filename,'rb') as file:
+
+       # loop till the end of the file
+       chunk = 0
+       while chunk != b'':
+          # read only 1024 bytes at a time
+          chunk = file.read(1024)
+          h.update(chunk)
+
+   # return the hex representation of digest
+   return h.hexdigest()
+
+def iterate_hash(root="null"):
+    """Appends to a dictionary with a key value pair of filename and filehash from a single directory """
+    if root == "null":
+        root = "/home/" + os.getlogin() + "/" +  relative_directory +  "/"
+    for i in os.listdir(root):
+        path = root + i 
+        try:
+            if os.path.isdir(path):
+                raise IsADirectoryError
+            else:
+                #print("Path is "+ path)
+                hash = hash_file(path)
+                #print(i + " : " + hash)
+                data[path] = hash
+        except IsADirectoryError:
+            directory = root + i + "/"
+            iterate_hash(root=directory)
+            #print("The following is a directory: " + root + i)
+
+def compare_sha():
+    """ Compares the sha of two files in a dictionary."""
+    for k in data:
+        similar = 0
+        for kk in data:
+            if data[kk] == data[k]:
+                similar += 1
+                if similar >= 2:
+                   print(k + " Is similar to " + kk)
+                   data.pop(kk)
+                   compare_sha()
+                   return 0;
+
+iterate_hash()
+#print(data)
+compare_sha()
