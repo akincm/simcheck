@@ -7,4 +7,4 @@ Please provide feedbacks and pull requests for imporvements.
 
 Usage: ./simcheck any/path/in/home/directory
 
-Please make sure to make simcheck file executable or you can also run using `python simcheck` command.
+Please make sure to make simcheck file executable or you can also run using `python simchk` command.
