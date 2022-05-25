@@ -6,14 +6,15 @@ data = dict()
 
 """ 
 Similarities checker
-This program searches through subdirectories and checks for any replicas of all the files.
+This program searches through subdirectories and returns lists of all similar files separated by a semicolon ";".
 """
 
 if len(sys.argv) == 1:
-    print("No directory name provided...\n Usage: shacheck Path/To/Directory")
+    print("No directory name provided...\nUsage: shacheck Path/To/Directory")
     sys.exit()
 
 relative_directory = sys.argv[1]
+
 
 def hash_file(filename):
    """"This function returns the SHA-1 hash
@@ -35,10 +36,14 @@ def hash_file(filename):
    # return the hex representation of digest
    return h.hexdigest()
 
+
 def iterate_hash(root="null"):
-    """Appends to a dictionary with a key value pair of filename and filehash from a single directory """
+    """Appends a dictionary with a key value pair of filename and filehash from all the files in the directory and subdirectories."""
     if root == "null":
-        root = "/home/" + os.getlogin() + "/" +  relative_directory +  "/"
+        if relative_directory[0] == "/":
+            root = relative_directory + "/"
+        else:
+            root = "/home/" + os.getlogin() + "/" +  relative_directory +  "/"
     for i in os.listdir(root):
         path = root + i 
         try:
@@ -54,19 +59,36 @@ def iterate_hash(root="null"):
             iterate_hash(root=directory)
             #print("The following is a directory: " + root + i)
 
-def compare_sha():
-    """ Compares the sha of two files in a dictionary."""
-    for k in data:
-        similar = 0
-        for kk in data:
-            if data[kk] == data[k]:
-                similar += 1
-                if similar >= 2:
-                   print(k + " Is similar to " + kk)
-                   data.pop(kk)
-                   compare_sha()
-                   return 0;
 
+def compare_sha():
+    """Returns a list of all items in a dictionary with a same key."""
+    checked = []
+    similar_files = []
+    for k in data:
+        if k in checked:
+            pass # Ignore if the item has been already checked
+        else:
+            paths = list()
+            paths.append(k)
+            for kk in data :
+                if k == kk:
+                    pass
+                elif data[kk] == data[k]:
+                    paths.append(kk)
+                    checked.append(kk)
+            if len(paths) > 1: similar_files.append(paths)
+    return similar_files
+
+
+def return_common_lists(l):
+    """Returns all list items in a list after separating them with a semicolon ';'. """
+    for i in l:
+        print("")
+        print(*i, sep=':')
+
+
+print("Populating directories list...")
 iterate_hash()
-#print(data)
-compare_sha()
+print("Comparing files for similarities...")
+files = compare_sha()
+return_common_lists(files)
