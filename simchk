@@ -2,11 +2,9 @@
 import os, sys
 import hashlib
 
-data = dict()
-
 """ 
 Similarities checker
-This program searches through subdirectories and returns lists of all similar files separated by a semicolon ";".
+This program searches through subdirectories and returns lists of all files with same sha1 separated by a semicolon ";".
 """
 
 if len(sys.argv) == 1:
@@ -15,6 +13,7 @@ if len(sys.argv) == 1:
 
 relative_directory = sys.argv[1]
 
+dir_data = [] #Will contain a list of all file paths
 
 def hash_file(filename):
    """"This function returns the SHA-1 hash
@@ -37,7 +36,7 @@ def hash_file(filename):
    return h.hexdigest()
 
 
-def iterate_hash(root="null"):
+def iterate_dirs(root="null",data=dir_data):
     """Appends a dictionary with a key value pair of filename and filehash from all the files in the directory and subdirectories."""
     if root == "null":
         if relative_directory[0] == "/":
@@ -45,22 +44,29 @@ def iterate_hash(root="null"):
         else:
             root = "/home/" + os.getlogin() + "/" +  relative_directory +  "/"
     for i in os.listdir(root):
-        path = root + i 
+        path = root + i
         try:
             if os.path.isdir(path):
                 raise IsADirectoryError
             else:
                 #print("Path is "+ path)
-                hash = hash_file(path)
-                #print(i + " : " + hash)
-                data[path] = hash
+                data.append(path)
         except IsADirectoryError:
             directory = root + i + "/"
-            iterate_hash(root=directory)
+            iterate_dirs(root=directory, data=data)
             #print("The following is a directory: " + root + i)
 
 
-def compare_sha():
+def hash_dict(paths):
+    """"Returns a dictionary with paths provided as keys and their hashes as values for the key."""
+    hash_table = {}
+    for i in paths:
+        file_hash = hash_file(i)
+        hash_table[i] = file_hash
+    print(hash_table)
+    return hash_table
+
+def compare_sha(data):
     """Returns a list of all items in a dictionary with a same key."""
     checked = []
     similar_files = []
@@ -87,8 +93,15 @@ def return_common_lists(l):
         print(*i, sep=':')
 
 
-print("Populating directories list...")
-iterate_hash()
-print("Comparing files for similarities...")
-files = compare_sha()
-return_common_lists(files)
+iterate_dirs(data=dir_data)
+compare_sha(hash_dict(dir_data))
+
+
+if __name__ == "__maoin__":
+    pass
+    #print("Populating directories list...")
+    #iterate_hash()
+    #print("Comparing files for similarities...")
+    #files = compare_sha()
+    #return_common_lists(files)
+
