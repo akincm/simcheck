@@ -1,16 +1,23 @@
 #!/usr/bin/python
 import os, sys
 import hashlib
+import filecmp
 
 """ 
 Similarities checker
 This program searches through subdirectories and returns lists of all files with same sha1 separated by a semicolon ";".
 """
 
-if len(sys.argv) == 1:
-    print("No directory name provided...\nUsage: shacheck Path/To/Directory")
+if len(sys.argv) <= 2:
+    print("No directory name provided...\nUsage: shacheck Path/To/Directory method[sha:cmp]")
     sys.exit()
 
+
+if (sys.argv[2].lower() in ["sha", "cmp"]) == False:
+    print("Could not recognise method to use\n")
+    sys.exit()
+
+method = sys.argv[2]
 relative_directory = sys.argv[1]
 
 dir_data = [] #Will contain a list of all file paths
@@ -63,7 +70,6 @@ def hash_dict(paths):
     for i in paths:
         file_hash = hash_file(i)
         hash_table[i] = file_hash
-    print(hash_table)
     return hash_table
 
 def compare_sha(data):
@@ -86,22 +92,41 @@ def compare_sha(data):
     return similar_files
 
 
+def compare_cmp(data):
+    """Compares all the file paths in a list and returns a lists of all same files"""
+    similar_files_list = []
+    checked = []
+    for i in data:
+        if i in checked:
+            pass
+        else:
+            similar_files = []
+            similar_files.append(i)
+            for o in data:
+                if i == o:
+                    pass
+                elif filecmp.cmp(i, o):
+                    similar_files.append(o)
+                    checked.append(o)
+            if len(similar_files) > 1: similar_files_list.append(similar_files)
+    return similar_files_list
+
 def return_common_lists(l):
-    """Returns all list items in a list after separating them with a semicolon ';'. """
+    """Returns all list items inside another list after separating them with a semicolon ';'. """
     for i in l:
         print("")
-        print(*i, sep=':')
+        print(*i, sep=';')
 
 
-iterate_dirs(data=dir_data)
-compare_sha(hash_dict(dir_data))
-
-
-if __name__ == "__maoin__":
-    pass
-    #print("Populating directories list...")
-    #iterate_hash()
-    #print("Comparing files for similarities...")
-    #files = compare_sha()
-    #return_common_lists(files)
-
+if __name__ == "__main__":
+    dir_data = [] #Will contain a list of all file paths
+    print("Populating directories list...")
+    iterate_dirs(data=dir_data)
+    print("Comparing files for similarities...")
+    if method == "cmp":
+        print("Using cmp")
+        return_common_lists(compare_cmp(dir_data))
+    else:
+        print("Using sha")
+        hashes = hash_dict(dir_data)
+        return_common_lists(compare_sha(hashes))
