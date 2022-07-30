@@ -1,26 +1,24 @@
 #!/usr/bin/python
 import os, sys
+import getopt
 import hashlib
 import filecmp
 
-""" 
+"""
 Similarities checker
 This program searches through subdirectories and returns lists of all files with same sha1 separated by a semicolon ";".
 """
 
-if len(sys.argv) <= 2:
-    print("No directory name provided...\nUsage: shacheck Path/To/Directory method[sha:cmp]")
-    sys.exit()
+if len(sys.argv) == 1:
+        print("No arguments specified\nUse `simchk -h` for help")
+        sys.exit()
 
-
-if (sys.argv[2].lower() in ["sha", "cmp"]) == False:
-    print("Could not recognise method to use\n")
-    sys.exit()
-
-method = sys.argv[2]
-relative_directory = sys.argv[1]
+VERSION = "0.3"
+argv = sys.argv[1:]
+opts, args = getopt.getopt(argv, 'm:hv', ['method', 'help', 'version'])
 
 dir_data = [] #Will contain a list of all file paths
+
 
 def hash_file(filename):
    """"This function returns the SHA-1 hash
@@ -72,6 +70,7 @@ def hash_dict(paths):
         hash_table[i] = file_hash
     return hash_table
 
+
 def compare_sha(data):
     """Returns a list of all items in a dictionary with a same key."""
     checked = []
@@ -111,6 +110,7 @@ def compare_cmp(data):
             if len(similar_files) > 1: similar_files_list.append(similar_files)
     return similar_files_list
 
+
 def return_common_lists(l):
     """Returns all list items inside another list after separating them with a semicolon ';'. """
     for i in l:
@@ -118,12 +118,47 @@ def return_common_lists(l):
         print(*i, sep=';')
 
 
+def usage():
+    print("Simchk Version 0.3\n")
+    print("Usage: simchk [OPTION]... [DIRECTORY]")
+    print("""
+-m  --method <sha:compare>  method to use sha or compare
+-n, --number                number of similar files (Not available)
+-u  --no-use                (ignored) (Not available)
+-h  --help                  display this help and exit
+--verbose                   enable logging (Not available)
+--version                   output version information and exit
+""")
+
+
 if __name__ == "__main__":
+    method = "x"
+    for o, a in opts:
+        if o == "-v":
+            verbose = True
+        elif o == "--version":
+            print(f"Simchk Version %s.", VERSION)
+        elif o in ("-h", "--help"):
+            usage()
+            sys.exit()
+        elif o in ("-m", "--method"):
+            arg = a[0].lower()
+            if arg == "c" or arg == "s":
+                method = arg
+        else:
+            assert False, "unhandled option"
+    if method[0] != "c" and method[0] != "s":
+        method = "c"
+    try:
+        relative_directory = args[0]
+    except IndexError:
+        print("Bad directory name provided.\nExiting...")
+        sys.exit(2)
     dir_data = [] #Will contain a list of all file paths
     print("Populating directories list...")
     iterate_dirs(data=dir_data)
     print("Comparing files for similarities...")
-    if method == "cmp":
+    if method == "c":
         print("Using cmp")
         return_common_lists(compare_cmp(dir_data))
     else:
